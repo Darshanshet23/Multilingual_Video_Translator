@@ -1,6 +1,7 @@
 streamlit
-moviepy
+moviepy==1.0.3
 whisper
 gTTS
 pydub
+deep-translator
 googletrans==4.0.0rc1
