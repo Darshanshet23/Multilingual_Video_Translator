@@ -3,9 +3,8 @@ import moviepy.editor as mp
 import whisper
 from deep_translator import GoogleTranslator
 from gtts import gTTS
-from pydub import AudioSegment
-import os
 import tempfile
+import os
 
 st.title("🎥 Multilingual Video Translator")
 
@@ -47,31 +46,26 @@ if uploaded_video:
             "translated": translated_text
         })
 
-    # Generate audio using gTTS per segment
-    final_audio = AudioSegment.silent(duration=int(video_clip.duration * 1000))  # total length
+    # Generate translated clips
+    st.write("Generating translated speech...")
+    audio_clips = []
 
     for idx, seg in enumerate(translated_segments):
         tts = gTTS(seg["translated"], lang=language_options[target_language])
-        temp_tts_path = audio_path.replace(".wav", f"_temp_{idx}.mp3")
-        tts.save(temp_tts_path)
+        temp_path = os.path.join(tempfile.gettempdir(), f"seg_{idx}.mp3")
+        tts.save(temp_path)
+        clip = mp.AudioFileClip(temp_path).set_start(seg["start"]).set_duration(seg["end"] - seg["start"])
+        audio_clips.append(clip)
 
-        speech = AudioSegment.from_file(temp_tts_path)
-        start_ms = int(seg["start"] * 1000)
-        final_audio = final_audio.overlay(speech, position=start_ms)
+    # Combine all audio clips
+    final_audio = mp.CompositeAudioClip(audio_clips).set_duration(video_clip.duration)
 
-    final_output_path = audio_path.replace(".wav", "_translated.mp3")
-    final_audio.export(final_output_path, format="mp3")
-
-    st.audio(final_output_path)
     st.success("✅ Translated audio generated with original timing!")
 
-    # ✅ REPLACE original video audio with translated audio
+    # Replace original audio in video
     st.write("Replacing original video audio with translated version...")
-
     final_video_path = video_path.replace(".mp4", f"_{language_options[target_language]}_dubbed.mp4")
-
-    translated_audio = mp.AudioFileClip(final_output_path)
-    final_video = video_clip.set_audio(translated_audio)
+    final_video = video_clip.set_audio(final_audio)
     final_video.write_videofile(final_video_path, codec="libx264", audio_codec="aac")
 
     st.success("🎬 Final dubbed video generated!")
