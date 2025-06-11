@@ -1,4 +1,43 @@
+import sys
+import os
 import streamlit as st
+
+st.header("Debugging MoviePy Import")
+st.write(f"**Python executable:** `{sys.executable}`")
+st.write(f"**Python version:** `{sys.version}`")
+st.write(f"**sys.path (Python search paths):**")
+for p in sys.path:
+    st.text(f"- {p}")
+
+try:
+    import moviepy
+    st.write(f"**`moviepy` module found at:** `{moviepy.__file__}`")
+    moviepy_dir = os.path.dirname(moviepy.__file__)
+    st.write(f"**Contents of `moviepy` installation directory (`{moviepy_dir}`):**")
+    try:
+        contents = os.listdir(moviepy_dir)
+        for item in contents[:20]: # List first 20 items to avoid excessive output
+            st.text(f"- {item}")
+        if 'editor' in contents:
+            st.success("`editor` directory found within `moviepy` installation!")
+        else:
+            st.warning("`editor` directory NOT found within `moviepy` installation.")
+            st.warning("This is likely the cause of the 'No module named moviepy.editor' error.")
+    except Exception as e:
+        st.error(f"Could not list directory contents: {e}")
+
+except ImportError:
+    st.error("**`moviepy` module (base) not found at all!**")
+
+try:
+    import moviepy.editor as mp
+    st.success("**`moviepy.editor` imported successfully!** Your app should now run.")
+except ImportError as e:
+    st.error(f"**Failed to import `moviepy.editor`:** `{e}`")
+
+st.markdown("---") # Separator for clearer output
+
+
 import moviepy.editor as mp
 import whisper
 from deep_translator import GoogleTranslator
